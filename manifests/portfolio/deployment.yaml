@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio-app
+  namespace: portfolio
+  labels:
+    app: portfolio
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: portfolio
+  template:
+    metadata:
+      labels:
+        app: portfolio
+    spec:
+      containers:
+      - name: portfolio
+        image: ghcr.io/k5sha/me:62cfc3a
+        ports:
+        - containerPort: 3000
+        resources:
+         requests:
+            memory: "512Mi"
+            cpu: "250m"
+         limits:
+            memory: "512Mi"  
+            cpu: "500m"

@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: portfolio
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    path: manifests/portfolio
+    repoURL: git@github.com:k5sha/k5sha-gitops.git 
+    targetRevision: HEAD
+  destination:
+    name     : in-cluster
+    namespace: portfolio 
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
