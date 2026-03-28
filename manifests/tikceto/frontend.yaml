@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/k5sha/tikcetoweb:596a449
+        image: ghcr.io/k5sha/tikcetoweb:8b7d1d4
         ports:
         - containerPort: 80
         readinessProbe:
