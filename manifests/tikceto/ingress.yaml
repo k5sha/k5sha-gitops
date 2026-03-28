@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ticketo-ingress
+  namespace: tikceto
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: default
+spec:
+  ingressClassName: traefik 
+  tls:
+  - hosts:
+    - api.tikceto.k5sha.xyz
+    - s3.tikceto.k5sha.xyz
+    - tikceto.k5sha.xyz
+  rules:
+  - host: api.tikceto.k5sha.xyz
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ticketo-api
+            port:
+              number: 8080
+  - host: s3.tikceto.k5sha.xyz
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: minio
+            port:
+              number: 9000
+  - host: tikceto.k5sha.xyz
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ticketo-frontend
+            port:
+              number: 80

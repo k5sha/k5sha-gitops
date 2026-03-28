@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticketo-api
+  namespace: tikceto
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1      
+      maxUnavailable: 0 
+  selector:
+    matchLabels:
+      app: ticketo-api
+  template:
+    metadata:
+      labels:
+        app: ticketo-api
+    spec:
+      containers:
+      - name: ticketo-api
+        image: ghcr.io/k5sha/tikceto:66eff7b
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - secretRef:
+            name: ticketo-secrets
+        readinessProbe:
+          httpGet:
+            path: /v1/health
+            port: 8080
+          initialDelaySeconds: 5  
+          periodSeconds: 5        
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /v1/health
+            port: 8080
+          initialDelaySeconds: 5 
+          periodSeconds: 20
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticketo-api
+  namespace: tikceto
+spec:
+  selector:
+    app: ticketo-api
+  ports:
+  - port: 8080
+    targetPort: 8080
