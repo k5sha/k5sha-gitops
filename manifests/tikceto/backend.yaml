@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: ticketo-api
-        image: ghcr.io/k5sha/tikceto:66eff7b
+        image: ghcr.io/k5sha/tikceto:20c92a7
         ports:
         - containerPort: 8080
         envFrom:
