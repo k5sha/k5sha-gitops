@@ -20,6 +20,20 @@ spec:
         image: ghcr.io/k5sha/me:4430f6d
         ports:
         - containerPort: 3000
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 15  
+          periodSeconds: 5        
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 15 
+          periodSeconds: 20
         resources:
          requests:
             memory: "512Mi"
