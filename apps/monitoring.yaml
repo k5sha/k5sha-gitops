@@ -14,22 +14,18 @@ spec:
     helm:
       values: |
         prometheusOperator:
+          enabled: true
           admissionWebhooks:
             enabled: false
             patch:
               enabled: false
+          tls:
+            enabled: false
+          webhook:
+            enabled: false
         
-        grafana:
-          enabled: true
-          ingress:
-            enabled: true
-            ingressClassName: traefik
-            hosts:
-              - grafana.local
-            path: /
-            pathType: Prefix
-
         prometheus:
+          enabled: true
           prometheusSpec:
             storageSpec:
               volumeClaimTemplate:
@@ -39,14 +35,20 @@ spec:
                   resources:
                     requests:
                       storage: 10Gi
-
-        prometheus:
-          prometheusSpec:
             resources:
               requests:
                 memory: "512Mi"
               limits:
                 memory: "2Gi"
+
+        grafana:
+          enabled: true
+
+        kube-state-metrics:
+          enabled: true
+        
+        alertmanager:
+          enabled: true
 
   destination:
     server: https://kubernetes.default.svc
@@ -58,4 +60,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true 
+      - ServerSideApply=true
