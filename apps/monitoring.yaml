@@ -17,7 +17,7 @@ spec:
       ref: values
   destination:
     name     : in-cluster
-    namespace: portfolio 
+    namespace: monitoring 
   syncPolicy:
     automated:
       prune: true
