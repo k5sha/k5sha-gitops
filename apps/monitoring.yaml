@@ -3,57 +3,18 @@ kind: Application
 metadata:
   name: monitoring
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://prometheus-community.github.io/helm-charts
-    chart: kube-prometheus-stack
-    targetRevision: 69.3.1
-    helm:
-      values: |
-        prometheusOperator:
-          admissionWebhooks:
-            enabled: false
-            patch:
-              enabled: false
-        
-        prometheus:
-          prometheusSpec:
-            resources:
-              requests:
-                memory: "512Mi"
-              limits:
-                memory: "2Gi"
-            storageSpec:
-              volumeClaimTemplate:
-                spec:
-                  accessModes: ["ReadWriteOnce"]
-                  resources:
-                    requests:
-                      storage: 10Gi
-        
-        grafana:
-          enabled: true
-          
-        alertmanager:
-          enabled: true
-          
-        nodeExporter:
-          enabled: true
-          
-        kubeStateMetrics:
-          enabled: true
-
+    repoURL: git@github.com:k5sha/k5sha-gitops.git
+    targetRevision: HEAD
+    path: manifests/monitoring 
   destination:
     name     : in-cluster
     namespace: monitoring
-    
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true
