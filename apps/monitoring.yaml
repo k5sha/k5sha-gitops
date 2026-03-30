@@ -3,25 +3,53 @@ kind: Application
 metadata:
   name: monitoring
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  sources:
-    - repoURL: https://prometheus-community.github.io/helm-charts
-      chart: kube-prometheus-stack
-      targetRevision: 69.3.1
-      helm:
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 69.3.1
+    helm:
       values: |
         prometheusOperator:
           admissionWebhooks:
             enabled: false
-        # valueFiles:
-        #   - $values/manifests/monitoring/values.yaml
-    - repoURL: git@github.com:k5sha/k5sha-gitops.git 
-      targetRevision: HEAD
-      ref: values
+            patch:
+              enabled: false
+        
+        prometheus:
+          prometheusSpec:
+            resources:
+              requests:
+                memory: "512Mi"
+              limits:
+                memory: "2Gi"
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 10Gi
+        
+        grafana:
+          enabled: true
+          
+        alertmanager:
+          enabled: true
+          
+        nodeExporter:
+          enabled: true
+          
+        kubeStateMetrics:
+          enabled: true
+
   destination:
-    name     : in-cluster
-    namespace: monitoring 
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+    
   syncPolicy:
     automated:
       prune: true
