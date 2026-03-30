@@ -12,6 +12,12 @@ prometheus:
           resources:
             requests:
               storage: 10Gi
+            
+prometheusOperator:
+  admissionWebhooks:
+    enabled: false
+    patch:
+      enabled: false
 
 grafana:
   enabled: true
