@@ -3,12 +3,14 @@ kind: Application
 metadata:
   name: monitoring
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
     repoURL: https://prometheus-community.github.io/helm-charts
     chart: kube-prometheus-stack
-    targetRevision: 69.3.1
+    targetRevision: 69.3.0
     helm:
       values: |
         prometheusOperator:
@@ -16,11 +18,44 @@ spec:
             enabled: false
             patch:
               enabled: false
+        
+        grafana:
+          enabled: true
+          ingress:
+            enabled: true
+            ingressClassName: traefik
+            hosts:
+              - grafana.local
+            path: /
+            pathType: Prefix
+
+        prometheus:
+          prometheusSpec:
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: local-path
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 10Gi
+
+        prometheus:
+          prometheusSpec:
+            resources:
+              requests:
+                memory: "512Mi"
+              limits:
+                memory: "2Gi"
+
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
-  ignoreDifferences:
-    - group: admissionregistration.k8s.io
-      kind: MutatingWebhookConfiguration
-      jsonPointers:
-        - /webhooks
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true 
