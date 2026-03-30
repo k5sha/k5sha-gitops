@@ -10,8 +10,12 @@ spec:
       chart: kube-prometheus-stack
       targetRevision: 69.3.1
       helm:
-        valueFiles:
-          - $values/manifests/monitoring/values.yaml
+      values: |
+        prometheusOperator:
+          admissionWebhooks:
+            enabled: false
+        # valueFiles:
+        #   - $values/manifests/monitoring/values.yaml
     - repoURL: git@github.com:k5sha/k5sha-gitops.git 
       targetRevision: HEAD
       ref: values
