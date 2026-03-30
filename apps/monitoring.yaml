@@ -6,15 +6,21 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:k5sha/k5sha-gitops.git
-    targetRevision: HEAD
-    path: manifests/monitoring 
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 69.3.1
+    helm:
+      values: |
+        prometheusOperator:
+          admissionWebhooks:
+            enabled: false
+            patch:
+              enabled: false
   destination:
-    name     : in-cluster
+    server: https://kubernetes.default.svc
     namespace: monitoring
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks
