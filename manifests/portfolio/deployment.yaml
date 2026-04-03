@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: portfolio
-        image: ghcr.io/k5sha/me:cbd1793
+        image: ghcr.io/k5sha/me:3d17ffb
         ports:
         - containerPort: 3000
         readinessProbe:
