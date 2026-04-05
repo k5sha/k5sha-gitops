@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: calculator
-        image: ghcr.io/k5sha/calculator:a9b3ccc
+        image: ghcr.io/k5sha/calculator:dc807b5
         ports:
         - containerPort: 80
         readinessProbe:
