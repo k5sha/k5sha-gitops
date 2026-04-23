@@ -89,12 +89,8 @@ spec:
           runAsNonRoot: false
           allowPrivilegeEscalation: true
         resources:
-          requests:
-            cpu: "10m"
-            memory: "16Mi"
-          limits:
-            cpu: "50m"
-            memory: "32Mi"
+          requests: { cpu: "10m", memory: "16Mi" }
+          limits: { cpu: "50m", memory: "32Mi" }
         volumeMounts:
         - name: master-data
           mountPath: /data
@@ -113,12 +109,8 @@ spec:
         - containerPort: 9333
         - containerPort: 19333
         resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
+          requests: { cpu: "100m", memory: "128Mi" }
+          limits: { cpu: "200m", memory: "256Mi" }
         volumeMounts:
         - name: master-data
           mountPath: /data
@@ -129,8 +121,7 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: "local-path"
       resources:
-        requests:
-          storage: 1Gi
+        requests: { storage: 1Gi }
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -167,12 +158,8 @@ spec:
           runAsNonRoot: false
           allowPrivilegeEscalation: true
         resources:
-          requests:
-            cpu: "10m"
-            memory: "16Mi"
-          limits:
-            cpu: "50m"
-            memory: "32Mi"
+          requests: { cpu: "10m", memory: "16Mi" }
+          limits: { cpu: "50m", memory: "32Mi" }
         volumeMounts:
         - name: seaweedfs-data
           mountPath: /data
@@ -191,12 +178,8 @@ spec:
         - containerPort: 8080
         - containerPort: 18080
         resources:
-          requests:
-            cpu: "200m"
-            memory: "256Mi"
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
+          requests: { cpu: "200m", memory: "256Mi" }
+          limits: { cpu: "500m", memory: "512Mi" }
         volumeMounts:
         - name: seaweedfs-data
           mountPath: /data
@@ -207,14 +190,17 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: "local-path"
       resources:
-        requests:
-          storage: 5Gi
+        requests: { storage: 5Gi }
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: seaweedfs-filer
   namespace: tikceto
+  annotations:
+    ignore-check.kube-linter.io/no-read-only-root-fs: "Init container needs write access"
+    ignore-check.kube-linter.io/run-as-non-root: "Init container needs root"
+    ignore-check.kube-linter.io/privilege-escalation-container: "Init container needs escalation"
 spec:
   serviceName: seaweedfs-filer
   replicas: 1
@@ -232,10 +218,24 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
+      initContainers:
+      - name: volume-permissions
+        image: busybox:1.36
+        command: ["sh", "-c", "chown -R 1000:1000 /data && chmod -R 775 /data"]
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: true
+        resources:
+          requests: { cpu: "10m", memory: "16Mi" }
+          limits: { cpu: "50m", memory: "32Mi" }
+        volumeMounts:
+        - name: filer-data
+          mountPath: /data
       containers:
       - name: filer
         image: chrislusf/seaweedfs:3.81
-        args: ["filer", "-master=seaweedfs-master:9333", "-s3", "-s3.config=/etc/seaweedfs/s3.json", "-s3.port=8333"]
+        args: ["filer", "-master=seaweedfs-master:9333", "-s3", "-s3.config=/etc/seaweedfs/s3.json", "-s3.port=8333", "-defaultStoreDir=/data"]
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
@@ -248,19 +248,24 @@ spec:
         - name: S3_SECRET_KEY
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_PASSWORD } }
         resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "250m"
-            memory: "256Mi"
+          requests: { cpu: "100m", memory: "256Mi" }
+          limits: { cpu: "250m", memory: "512Mi" }
         ports:
         - containerPort: 8888
         - containerPort: 8333
         volumeMounts:
         - name: s3-config
           mountPath: /etc/seaweedfs
+        - name: filer-data
+          mountPath: /data
       volumes:
       - name: s3-config
-        configMap:
-          name: seaweedfs-s3-config
+        configMap: { name: seaweedfs-s3-config }
+  volumeClaimTemplates:
+  - metadata:
+      name: filer-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "local-path"
+      resources:
+        requests: { storage: 2Gi }
