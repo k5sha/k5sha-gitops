@@ -61,10 +61,10 @@ spec:
             memory: "256Mi"
             cpu: "500m"
         volumeMounts:
-        - name: tmp-storage
+        - name: tmp
           mountPath: /tmp
-        - name: nginx-cache
-          mountPath: /var/cache/nginx
+        - name: var-cache
+          mountPath: /var/cache/nginx 
       volumes:
       - name: tmp
         emptyDir: {}
