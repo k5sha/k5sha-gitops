@@ -7,6 +7,7 @@ metadata:
     app: minio
   annotations:
     ignore-check.kube-linter.io/no-read-only-root-fs: "MinIO needs write access for backend initialization"
+    avd.aquasecurity.github.io/skip: "KSV-0014"
 spec:
   serviceName: "minio"
   replicas: 1
