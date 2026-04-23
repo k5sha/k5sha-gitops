@@ -19,6 +19,7 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
+        runAsGroup: 1000
         fsGroup: 1000
 
       containers:
@@ -38,7 +39,6 @@ spec:
           capabilities:
             drop:
               - ALL
-
         ports:
         - containerPort: 9000
           name: api
@@ -53,7 +53,8 @@ spec:
           value: "http://minio:9000"
         - name: MINIO_DEFAULT_BUCKETS
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: S3_BUCKET_NAME } }
-        
+        - name: MINIO_CONFIG_DIR
+          value: "/tmp/.minio"
         resources:
           requests:
             memory: "512Mi"
