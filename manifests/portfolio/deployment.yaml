@@ -30,7 +30,7 @@ spec:
 
       containers:
       - name: portfolio
-        image: ghcr.io/k5sha/me:3d17ffb
+        image: ghcr.io/k5sha/me:26d0892
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
