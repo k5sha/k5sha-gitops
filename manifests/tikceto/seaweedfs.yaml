@@ -59,6 +59,10 @@ kind: StatefulSet
 metadata:
   name: seaweedfs-master
   namespace: tikceto
+  annotations:
+    ignore-check.kube-linter.io/no-read-only-root-fs: "Init container needs write access"
+    ignore-check.kube-linter.io/run-as-non-root: "Init container needs root for chown"
+    ignore-check.kube-linter.io/privilege-escalation-container: "Init container needs escalation"
 spec:
   serviceName: seaweedfs-master
   replicas: 1
@@ -76,10 +80,28 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
+      initContainers:
+      - name: volume-permissions
+        image: busybox:1.36
+        command: ["sh", "-c", "chown -R 1000:1000 /data && chmod -R 775 /data"]
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: true
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "16Mi"
+          limits:
+            cpu: "50m"
+            memory: "32Mi"
+        volumeMounts:
+        - name: master-data
+          mountPath: /data
       containers:
       - name: master
-        image: chrislusf/seaweedfs:3.81  # Замість latest
-        args: ["master", "-ip=$(POD_IP)", "-ip.bind=0.0.0.0"]
+        image: chrislusf/seaweedfs:3.81
+        args: ["master", "-ip=$(POD_IP)", "-ip.bind=0.0.0.0", "-dir=/data"]
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
@@ -97,6 +119,18 @@ spec:
           limits:
             cpu: "200m"
             memory: "256Mi"
+        volumeMounts:
+        - name: master-data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: master-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "local-path"
+      resources:
+        requests:
+          storage: 1Gi
 ---
 apiVersion: apps/v1
 kind: StatefulSet
