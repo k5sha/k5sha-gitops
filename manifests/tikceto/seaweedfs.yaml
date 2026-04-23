@@ -258,9 +258,13 @@ spec:
           mountPath: /etc/seaweedfs
         - name: filer-data
           mountPath: /data
+        - name: tmp-dir        
+          mountPath: /tmp
       volumes:
       - name: s3-config
         configMap: { name: seaweedfs-s3-config }
+      - name: tmp-dir       
+        emptyDir: {}
   volumeClaimTemplates:
   - metadata:
       name: filer-data
