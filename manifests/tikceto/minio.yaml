@@ -39,11 +39,13 @@ spec:
           capabilities:
             drop:
               - ALL
+        
         ports:
         - containerPort: 9000
-          name: api
+          name: s3-api      
         - containerPort: 9001
           name: console
+
         env:
         - name: MINIO_ROOT_USER
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_USER } }
@@ -53,8 +55,11 @@ spec:
           value: "http://minio:9000"
         - name: MINIO_DEFAULT_BUCKETS
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: S3_BUCKET_NAME } }
+        - name: HOME
+          value: /tmp
         - name: MINIO_CONFIG_DIR
-          value: "/tmp/.minio"
+          value: /tmp/.minio
+
         resources:
           requests:
             memory: "512Mi"
@@ -72,13 +77,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /minio/health/live
-            port: 9000
+            port: s3-api
           initialDelaySeconds: 30
           periodSeconds: 30
         readinessProbe:
           httpGet:
-            path: /minio/health/live
-            port: 9000
+            path: /minio/health/ready 
+            port: s3-api
           initialDelaySeconds: 30
           periodSeconds: 30
       
