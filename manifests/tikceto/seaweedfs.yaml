@@ -1,30 +1,4 @@
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: seaweedfs-s3-config
-  namespace: tikceto
-data:
-  s3.json: |
-    {
-      "identities": [
-        {
-          "name": "admin",
-          "credentials": [
-            {
-              "accessKey": "${S3_ACCESS_KEY}", 
-              "secretKey": "${S3_SECRET_KEY}"
-            }
-          ],
-          "actions": ["Read", "Write", "List", "Tagging", "Admin"]
-        },
-        {
-          "name": "anonymous",
-          "actions": ["Read", "List"]
-        }
-      ]
-    }
----
-apiVersion: v1
 kind: Service
 metadata:
   name: seaweedfs-master
@@ -60,9 +34,9 @@ metadata:
   name: seaweedfs-master
   namespace: tikceto
   annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "Init container needs write access"
-    ignore-check.kube-linter.io/run-as-non-root: "Init container needs root for chown"
-    ignore-check.kube-linter.io/privilege-escalation-container: "Init container needs escalation"
+    ignore-check.kube-linter.io/no-read-only-root-fs: "volume-permissions needs write access"
+    ignore-check.kube-linter.io/run-as-non-root: "volume-permissions needs root"
+    ignore-check.kube-linter.io/privilege-escalation-container: "volume-permissions needs escalation"
 spec:
   serviceName: seaweedfs-master
   replicas: 1
@@ -88,6 +62,7 @@ spec:
           runAsUser: 0
           runAsNonRoot: false
           allowPrivilegeEscalation: true
+          readOnlyRootFilesystem: false
         resources:
           requests: { cpu: "10m", memory: "16Mi" }
           limits: { cpu: "50m", memory: "32Mi" }
@@ -129,9 +104,9 @@ metadata:
   name: seaweedfs-volume
   namespace: tikceto
   annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "Init container needs write access"
-    ignore-check.kube-linter.io/run-as-non-root: "Init container needs root for chown"
-    ignore-check.kube-linter.io/privilege-escalation-container: "Init container needs escalation"
+    ignore-check.kube-linter.io/no-read-only-root-fs: "volume-permissions needs write access"
+    ignore-check.kube-linter.io/run-as-non-root: "volume-permissions needs root"
+    ignore-check.kube-linter.io/privilege-escalation-container: "volume-permissions needs escalation"
 spec:
   serviceName: seaweedfs-volume
   replicas: 1
@@ -157,6 +132,7 @@ spec:
           runAsUser: 0
           runAsNonRoot: false
           allowPrivilegeEscalation: true
+          readOnlyRootFilesystem: false
         resources:
           requests: { cpu: "10m", memory: "16Mi" }
           limits: { cpu: "50m", memory: "32Mi" }
@@ -198,9 +174,9 @@ metadata:
   name: seaweedfs-filer
   namespace: tikceto
   annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "Init container needs write access"
-    ignore-check.kube-linter.io/run-as-non-root: "Init container needs root"
-    ignore-check.kube-linter.io/privilege-escalation-container: "Init container needs escalation"
+    ignore-check.kube-linter.io/no-read-only-root-fs: "Init containers need write access"
+    ignore-check.kube-linter.io/run-as-non-root: "volume-permissions needs root"
+    ignore-check.kube-linter.io/privilege-escalation-container: "volume-permissions needs escalation"
 spec:
   serviceName: seaweedfs-filer
   replicas: 1
@@ -218,6 +194,11 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
+      volumes:
+      - name: generated-s3-config
+        emptyDir: {}
+      - name: tmp-dir
+        emptyDir: {}
       initContainers:
       - name: volume-permissions
         image: busybox:1.36
@@ -226,12 +207,55 @@ spec:
           runAsUser: 0
           runAsNonRoot: false
           allowPrivilegeEscalation: true
+          readOnlyRootFilesystem: false
         resources:
           requests: { cpu: "10m", memory: "16Mi" }
           limits: { cpu: "50m", memory: "32Mi" }
         volumeMounts:
         - name: filer-data
           mountPath: /data
+      - name: s3-config-generator
+        image: busybox:1.36
+        env:
+        - name: S3_ACCESS_KEY
+          valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_USER } }
+        - name: S3_SECRET_KEY
+          valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_PASSWORD } }
+        command: ["sh", "-c"]
+        args:
+        - |
+          cat <<EOF > /etc/seaweedfs/s3.json
+          {
+            "identities": [
+              {
+                "name": "admin",
+                "credentials": [
+                  {
+                    "accessKey": "$S3_ACCESS_KEY",
+                    "secretKey": "$S3_SECRET_KEY"
+                  }
+                ],
+                "actions": ["Read", "Write", "List", "Tagging", "Admin"]
+              },
+              {
+                "name": "anonymous",
+                "actions": ["Read", "List"]
+              }
+            ]
+          }
+          EOF
+        securityContext:
+          runAsUser: 1000
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false 
+          capabilities: { drop: ["ALL"] }
+        resources:
+          requests: { cpu: "10m", memory: "16Mi" }
+          limits: { cpu: "50m", memory: "32Mi" }
+        volumeMounts:
+        - name: generated-s3-config
+          mountPath: /etc/seaweedfs
       containers:
       - name: filer
         image: chrislusf/seaweedfs:3.81
@@ -263,17 +287,12 @@ spec:
         - containerPort: 8888
         - containerPort: 8333
         volumeMounts:
-        - name: s3-config
+        - name: generated-s3-config
           mountPath: /etc/seaweedfs
         - name: filer-data
           mountPath: /data
         - name: tmp-dir        
           mountPath: /tmp
-      volumes:
-      - name: s3-config
-        configMap: { name: seaweedfs-s3-config }
-      - name: tmp-dir       
-        emptyDir: {}
   volumeClaimTemplates:
   - metadata:
       name: filer-data
