@@ -5,6 +5,8 @@ metadata:
   namespace: tikceto
   labels:
     app: minio
+  annotations:
+    ignore-check.kube-linter.io/no-read-only-root-fs: "MinIO needs write access for backend initialization"
 spec:
   serviceName: "minio"
   replicas: 1
@@ -34,7 +36,7 @@ spec:
         securityContext:
           runAsNonRoot: true
           runAsUser: 1000
-          readOnlyRootFilesystem: true
+          readOnlyRootFilesystem: false
           allowPrivilegeEscalation: false
           capabilities:
             drop:
