@@ -31,9 +31,9 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: minio
+            name: seaweedfs-s3
             port:
-              number: 9000
+              number: 8333
   - host: tikceto.k5sha.xyz
     http:
       paths:
