@@ -6,8 +6,8 @@ metadata:
   labels:
     app: minio
   annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "MinIO needs write access for backend initialization"
-    
+    ignore-check.kube-linter.io/no-read-only-root-fs: "Init container needs write access to prepare volumes"
+    ignore-check.kube-linter.io/run-as-non-root: "Init container needs root to run chown"
 spec:
   serviceName: "minio"
   replicas: 1
@@ -25,6 +25,29 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
 
+      initContainers:
+      - name: volume-permissions
+        image: busybox:1.36
+        command: ["sh", "-c", "chown -R 1000:1000 /data && chmod -R 775 /data"]
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "16Mi"
+          limits:
+            cpu: "50m"
+            memory: "32Mi"
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: true
+          capabilities:
+            add: ["CHOWN", "FOWNER"]
+            drop: ["ALL"]
+        volumeMounts:
+        - name: minio-storage
+          mountPath: /data
+
       containers:
       - name: minio
         image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
@@ -37,16 +60,17 @@ spec:
         securityContext:
           runAsNonRoot: true
           runAsUser: 1000
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true 
           allowPrivilegeEscalation: false
           capabilities:
-            drop:
-              - ALL
+            drop: ["ALL"]
+        
         ports:
         - containerPort: 9000
-          name: api
+          name: s3-api
         - containerPort: 9001
           name: console
+        
         env:
         - name: MINIO_ROOT_USER
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_USER } }
@@ -56,6 +80,11 @@ spec:
           value: "http://minio:9000"
         - name: MINIO_DEFAULT_BUCKETS
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: S3_BUCKET_NAME } }
+        - name: HOME
+          value: /tmp
+        - name: MINIO_CONFIG_DIR
+          value: /tmp/.minio
+
         resources:
           requests:
             memory: "512Mi"
@@ -73,13 +102,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /minio/health/live
-            port: 9000
+            port: s3-api 
           initialDelaySeconds: 30
           periodSeconds: 30
         readinessProbe:
           httpGet:
-            path: /minio/health/live
-            port: 9000
+            path: /minio/health/ready 
+            port: s3-api
           initialDelaySeconds: 30
           periodSeconds: 30
       
