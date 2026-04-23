@@ -5,9 +5,6 @@ metadata:
   namespace: tikceto
   labels:
     app: minio
-  annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "MinIO needs write access for backend initialization"
-    
 spec:
   serviceName: "minio"
   replicas: 1
@@ -18,8 +15,6 @@ spec:
     metadata:
       labels:
         app: minio
-      annotations:
-        avd.aquasecurity.github.io/skip: "KSV-0014"
     spec:
       securityContext:
         runAsNonRoot: true
@@ -39,16 +34,12 @@ spec:
         securityContext:
           runAsNonRoot: true
           runAsUser: 1000
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:
               - ALL
-        ports:
-        - containerPort: 9000
-          name: api
-        - containerPort: 9001
-          name: console
+        
         env:
         - name: MINIO_ROOT_USER
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_USER } }
@@ -58,8 +49,11 @@ spec:
           value: "http://minio:9000"
         - name: MINIO_DEFAULT_BUCKETS
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: S3_BUCKET_NAME } }
+        - name: HOME
+          value: /tmp
         - name: MINIO_CONFIG_DIR
-          value: "/tmp/.minio"
+          value: /tmp/.minio
+
         resources:
           requests:
             memory: "512Mi"
@@ -82,7 +76,7 @@ spec:
           periodSeconds: 30
         readinessProbe:
           httpGet:
-            path: /minio/health/live
+            path: /minio/health/ready 
             port: 9000
           initialDelaySeconds: 30
           periodSeconds: 30
