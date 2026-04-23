@@ -26,7 +26,8 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: calculator
         image: ghcr.io/k5sha/calculator:26b574f
@@ -59,3 +60,13 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "500m"
+        volumeMounts:
+        - name: tmp-storage
+          mountPath: /tmp
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: var-cache
+        emptyDir: {}
