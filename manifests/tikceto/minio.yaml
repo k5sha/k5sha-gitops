@@ -8,6 +8,7 @@ metadata:
   annotations:
     ignore-check.kube-linter.io/no-read-only-root-fs: "Init container needs write access to prepare volumes"
     ignore-check.kube-linter.io/run-as-non-root: "Init container needs root to run chown"
+    ignore-check.kube-linter.io/privilege-escalation-container: "Init container needs privilege escalation to perform chown on volumes"
 spec:
   serviceName: "minio"
   replicas: 1
