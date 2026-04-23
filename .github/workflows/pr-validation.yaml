@@ -1,0 +1,70 @@
+name: "PR Validation 📋"
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'manifests/**'
+      - 'apps/**'
+      - 'bootstrap/**'
+
+jobs:
+  security-and-lint:
+    name: Security & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Kube-Linter
+        uses: stackrox/kube-linter-action@v1.0.4
+        with:
+          directory: manifests/
+
+      - name: Trivy Config Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'manifests/'
+          format: 'table'
+          exit-code: '1' 
+          severity: 'CRITICAL,HIGH'
+
+  syntax-validation:
+    name: Syntax & Schema Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate YAML Syntax
+        run: |
+          find manifests/ apps/ bootstrap/ -name "*.yaml" -type f | xargs -I {} yq eval . {} > /dev/null
+          echo "All YAML files are syntactically correct."
+
+      - name: Validate ArgoCD Application manifests
+        run: |
+          for app in apps/*.yaml; do
+            if ! grep -q "kind: Application" "$app"; then
+              echo "Error: $app is missing 'kind: Application'"
+              exit 1
+            fi
+          done
+          echo "ArgoCD Application manifests verified."
+
+  manifest-sanity:
+    name: Manifest Sanity Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Check for Required Resources
+        run: |
+          for dir in manifests/*/; do
+            if [ -d "$dir" ]; then
+              if ! grep -rq "kind: Deployment" "$dir"; then
+                echo "Warning: No Deployment found in $dir"
+              fi
+            fi
+          done
