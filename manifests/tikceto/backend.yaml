@@ -35,7 +35,7 @@ spec:
 
       containers:
       - name: ticketo-api
-        image: ghcr.io/k5sha/tikceto:20c92a7
+        image: ghcr.io/k5sha/tikceto:3843419
         securityContext:
           runAsNonRoot: true
           runAsUser: 1000
