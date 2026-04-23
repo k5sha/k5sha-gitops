@@ -101,7 +101,7 @@ spec:
       containers:
       - name: master
         image: chrislusf/seaweedfs:3.81
-        args: ["master", "-ip=$(POD_IP)", "-ip.bind=0.0.0.0", "-dir=/data"]
+        args: ["master", "-ip=$(POD_IP)", "-ip.bind=0.0.0.0", "-mdir=/data"]
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
