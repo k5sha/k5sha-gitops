@@ -3,10 +3,14 @@ kind: Service
 metadata:
   name: portfolio-service
   namespace: portfolio
-spec:
-  selector:
+  labels:            
     app: portfolio
+spec:
+  type: ClusterIP    
+  selector:
+    app: portfolio 
   ports:
-    - protocol: TCP
+    - name: http   
+      protocol: TCP
       port: 80
       targetPort: 3000

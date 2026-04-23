@@ -1,9 +1,10 @@
-# manifests/ticketo/postgres-statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres-db
   namespace: tikceto
+  labels:
+    app: postgres
 spec:
   serviceName: "postgres-db"
   replicas: 1
@@ -15,17 +16,49 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
+
       containers:
       - name: postgres
-        image: postgres:16.3
+        image: postgres:16.3-alpine
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         ports:
         - containerPort: 5432
         envFrom:
         - secretRef:
             name: ticketo-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
         volumeMounts:
         - name: postgres-storage 
           mountPath: /var/lib/postgresql/data
+        - name: run-dir
+          mountPath: /var/run/postgresql
+        - name: tmp-dir
+          mountPath: /tmp
+
+      volumes:
+      - name: run-dir
+        emptyDir: {}
+      - name: tmp-dir
+        emptyDir: {}
+
   volumeClaimTemplates:
   - metadata:
       name: postgres-storage
@@ -41,9 +74,12 @@ kind: Service
 metadata:
   name: db
   namespace: tikceto
+  labels:
+    app: postgres
 spec:
   selector:
     app: postgres
   ports:
-  - port: 5432
+  - name: tcp-postgresql
+    port: 5432
     targetPort: 5432

@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: ticketo-frontend
   namespace: tikceto
+  labels:
+    app: ticketo-frontend
 spec:
   replicas: 2
   strategy:
@@ -18,23 +20,42 @@ spec:
       labels:
         app: ticketo-frontend
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: ticketo-frontend
+              topologyKey: "kubernetes.io/hostname"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101 
+        fsGroup: 101
       containers:
       - name: frontend
         image: ghcr.io/k5sha/tikcetoweb:8b7d1d4
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 101
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         ports:
-        - containerPort: 80
+        - containerPort: 8080 
         readinessProbe:
           httpGet:
             path: /
-            port: 80
+            port: 8080
           initialDelaySeconds: 15  
           periodSeconds: 5        
-          successThreshold: 1
-          failureThreshold: 3
         livenessProbe:
           httpGet:
             path: /
-            port: 80
+            port: 8080
           initialDelaySeconds: 15 
           periodSeconds: 20
         resources:
@@ -44,15 +65,29 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "200m"
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: var-cache
+          mountPath: /var/cache/nginx 
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: var-cache
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: ticketo-frontend
   namespace: tikceto
+  labels:
+    app: ticketo-frontend
 spec:
+  type: ClusterIP
   selector:
     app: ticketo-frontend
   ports:
-  - port: 80
-    targetPort: 80
+  - name: http
+    port: 80
+    targetPort: 8080 

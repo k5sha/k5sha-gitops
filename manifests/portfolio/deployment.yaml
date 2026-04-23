@@ -15,9 +15,28 @@ spec:
       labels:
         app: portfolio
     spec:
+      affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: portfolio
+                topologyKey: "kubernetes.io/hostname"
+      securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+
       containers:
       - name: portfolio
         image: ghcr.io/k5sha/me:3d17ffb
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         ports:
         - containerPort: 3000
         readinessProbe:
