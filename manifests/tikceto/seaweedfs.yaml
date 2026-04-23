@@ -1,30 +1,4 @@
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: seaweedfs-s3-config
-  namespace: tikceto
-data:
-  s3.json: |
-    {
-      "identities": [
-        {
-          "name": "admin",
-          "credentials": [
-            {
-              "accessKey": "${S3_ACCESS_KEY}", 
-              "secretKey": "${S3_SECRET_KEY}"
-            }
-          ],
-          "actions": ["Read", "Write", "List", "Tagging", "Admin"]
-        },
-        {
-          "name": "anonymous",
-          "actions": ["Read", "List"]
-        }
-      ]
-    }
----
-apiVersion: v1
 kind: Service
 metadata:
   name: seaweedfs-master
@@ -59,10 +33,6 @@ kind: StatefulSet
 metadata:
   name: seaweedfs-master
   namespace: tikceto
-  annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "Init container needs write access"
-    ignore-check.kube-linter.io/run-as-non-root: "Init container needs root for chown"
-    ignore-check.kube-linter.io/privilege-escalation-container: "Init container needs escalation"
 spec:
   serviceName: seaweedfs-master
   replicas: 1
@@ -88,9 +58,6 @@ spec:
           runAsUser: 0
           runAsNonRoot: false
           allowPrivilegeEscalation: true
-        resources:
-          requests: { cpu: "10m", memory: "16Mi" }
-          limits: { cpu: "50m", memory: "32Mi" }
         volumeMounts:
         - name: master-data
           mountPath: /data
@@ -100,17 +67,12 @@ spec:
         args: ["master", "-ip=$(POD_IP)", "-ip.bind=0.0.0.0", "-mdir=/data"]
         securityContext:
           readOnlyRootFilesystem: true
-          allowPrivilegeEscalation: false
-          capabilities: { drop: ["ALL"] }
         env:
         - name: POD_IP
           valueFrom: { fieldRef: { fieldPath: status.podIP } }
         ports:
         - containerPort: 9333
         - containerPort: 19333
-        resources:
-          requests: { cpu: "100m", memory: "128Mi" }
-          limits: { cpu: "200m", memory: "256Mi" }
         volumeMounts:
         - name: master-data
           mountPath: /data
@@ -128,10 +90,6 @@ kind: StatefulSet
 metadata:
   name: seaweedfs-volume
   namespace: tikceto
-  annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "Init container needs write access"
-    ignore-check.kube-linter.io/run-as-non-root: "Init container needs root for chown"
-    ignore-check.kube-linter.io/privilege-escalation-container: "Init container needs escalation"
 spec:
   serviceName: seaweedfs-volume
   replicas: 1
@@ -157,9 +115,6 @@ spec:
           runAsUser: 0
           runAsNonRoot: false
           allowPrivilegeEscalation: true
-        resources:
-          requests: { cpu: "10m", memory: "16Mi" }
-          limits: { cpu: "50m", memory: "32Mi" }
         volumeMounts:
         - name: seaweedfs-data
           mountPath: /data
@@ -169,17 +124,12 @@ spec:
         args: ["volume", "-mserver=seaweedfs-master:9333", "-port=8080", "-ip=$(POD_IP)", "-dir=/data"]
         securityContext:
           readOnlyRootFilesystem: true
-          allowPrivilegeEscalation: false
-          capabilities: { drop: ["ALL"] }
         env:
         - name: POD_IP
           valueFrom: { fieldRef: { fieldPath: status.podIP } }
         ports:
         - containerPort: 8080
         - containerPort: 18080
-        resources:
-          requests: { cpu: "200m", memory: "256Mi" }
-          limits: { cpu: "500m", memory: "512Mi" }
         volumeMounts:
         - name: seaweedfs-data
           mountPath: /data
@@ -197,10 +147,6 @@ kind: StatefulSet
 metadata:
   name: seaweedfs-filer
   namespace: tikceto
-  annotations:
-    ignore-check.kube-linter.io/no-read-only-root-fs: "Init container needs write access"
-    ignore-check.kube-linter.io/run-as-non-root: "Init container needs root"
-    ignore-check.kube-linter.io/privilege-escalation-container: "Init container needs escalation"
 spec:
   serviceName: seaweedfs-filer
   replicas: 1
@@ -218,6 +164,11 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
+      volumes:
+      - name: generated-s3-config
+        emptyDir: {}
+      - name: tmp-dir
+        emptyDir: {}
       initContainers:
       - name: volume-permissions
         image: busybox:1.36
@@ -226,12 +177,42 @@ spec:
           runAsUser: 0
           runAsNonRoot: false
           allowPrivilegeEscalation: true
-        resources:
-          requests: { cpu: "10m", memory: "16Mi" }
-          limits: { cpu: "50m", memory: "32Mi" }
         volumeMounts:
         - name: filer-data
           mountPath: /data
+      - name: s3-config-generator
+        image: busybox:1.36
+        env:
+        - name: S3_ACCESS_KEY
+          valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_USER } }
+        - name: S3_SECRET_KEY
+          valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_PASSWORD } }
+        command: ["sh", "-c"]
+        args:
+        - |
+          cat <<EOF > /etc/seaweedfs/s3.json
+          {
+            "identities": [
+              {
+                "name": "admin",
+                "credentials": [
+                  {
+                    "accessKey": "$S3_ACCESS_KEY",
+                    "secretKey": "$S3_SECRET_KEY"
+                  }
+                ],
+                "actions": ["Read", "Write", "List", "Tagging", "Admin"]
+              },
+              {
+                "name": "anonymous",
+                "actions": ["Read", "List"]
+              }
+            ]
+          }
+          EOF
+        volumeMounts:
+        - name: generated-s3-config
+          mountPath: /etc/seaweedfs
       containers:
       - name: filer
         image: chrislusf/seaweedfs:3.81
@@ -247,8 +228,6 @@ spec:
                 echo "fs.mkdir /buckets/${S3_DEFAULT_BUCKET}" | weed shell -master=seaweedfs-master:9333
         securityContext:
           readOnlyRootFilesystem: true
-          allowPrivilegeEscalation: false
-          capabilities: { drop: ["ALL"] }
         env:
         - name: S3_DEFAULT_BUCKET
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_DEFAULT_BUCKETS } }
@@ -256,24 +235,16 @@ spec:
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_USER } }
         - name: S3_SECRET_KEY
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_PASSWORD } }
-        resources:
-          requests: { cpu: "100m", memory: "256Mi" }
-          limits: { cpu: "250m", memory: "512Mi" }
         ports:
         - containerPort: 8888
         - containerPort: 8333
         volumeMounts:
-        - name: s3-config
+        - name: generated-s3-config
           mountPath: /etc/seaweedfs
         - name: filer-data
           mountPath: /data
         - name: tmp-dir        
           mountPath: /tmp
-      volumes:
-      - name: s3-config
-        configMap: { name: seaweedfs-s3-config }
-      - name: tmp-dir       
-        emptyDir: {}
   volumeClaimTemplates:
   - metadata:
       name: filer-data
