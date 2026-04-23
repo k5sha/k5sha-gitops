@@ -8,7 +8,7 @@ data:
     {
       "identities": [
         {
-          "name": "${S3_ADMIN_NAME}",
+          "name": "admin",
           "credentials": [
             {
               "accessKey": "${S3_ACCESS_KEY}", 
@@ -236,12 +236,21 @@ spec:
       - name: filer
         image: chrislusf/seaweedfs:3.81
         args: ["filer", "-master=seaweedfs-master:9333", "-s3", "-s3.config=/etc/seaweedfs/s3.json", "-s3.port=8333", "-defaultStoreDir=/data"]
+        lifecycle:
+          postStart:
+            exec:
+              command: 
+              - "/bin/sh"
+              - "-c"
+              - |
+                sleep 5;
+                echo "fs.mkdir /buckets/${S3_DEFAULT_BUCKET}" | weed shell -master=seaweedfs-master:9333
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities: { drop: ["ALL"] }
         env:
-        - name: S3_ADMIN_NAME
+        - name: S3_DEFAULT_BUCKET
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_DEFAULT_BUCKETS } }
         - name: S3_ACCESS_KEY
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: MINIO_ROOT_USER } }
