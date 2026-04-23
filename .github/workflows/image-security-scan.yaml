@@ -9,34 +9,38 @@ on:
     - cron: '0 0 * * 0'
 
 jobs:
-  trivy-image-scan:
-    name: Scan Container Images
+  extract-images:
+    name: Extract Images
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Extract Images from Manifests
-        id: extract_images
+      - name: Create Image Matrix
+        id: set-matrix
         run: |
-          # Finds lines with "image:", removes whitespace and quotes, and gets unique images
-          IMAGES=$(grep -r "image:" manifests/ | awk '{print $3}' | tr -d '"' | tr -d "'" | sort -u)
-          
-          # Join images by space for the loop
-          echo "found_images=$IMAGES" >> $GITHUB_OUTPUT
-          echo "Images found for scanning: $IMAGES"
+          # Знаходимо образи, чистимо їх і перетворюємо у JSON масив для Matrix
+          IMAGES=$(grep -r "image:" manifests/ | awk '{print $NF}' | tr -d '"' | tr -d "'" | sort -u | jq -R . | jq -s -c .)
+          echo "matrix=$IMAGES" >> $GITHUB_OUTPUT
 
-      - name: Run Trivy Scan
+  trivy-scan:
+    name: Scan
+    needs: extract-images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false 
+      matrix:
+        image: ${{ fromJson(needs.extract-images.outputs.matrix) }}
+    
+    steps:
+      - name: Run Trivy Scan for ${{ matrix.image }}
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ steps.extract_images.outputs.found_images }}
+          image-ref: ${{ matrix.image }}
           format: 'table'
-          exit-code: '1' 
-          ignore-unfixed: true 
+          exit-code: '1'
+          ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-
-      - name: Alert on Failure
-        if: failure()
-        run: |
-          echo "Security scan failed! One or more images in the manifests/ directory contain CRITICAL or HIGH vulnerabilities."
