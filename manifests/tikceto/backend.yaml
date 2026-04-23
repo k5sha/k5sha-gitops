@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: ticketo-api
   namespace: tikceto
+  labels:           
+    app: ticketo-api
 spec:
   replicas: 2
   strategy:
@@ -18,9 +20,30 @@ spec:
       labels:
         app: ticketo-api
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: ticketo-api
+              topologyKey: "kubernetes.io/hostname"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+
       containers:
       - name: ticketo-api
         image: ghcr.io/k5sha/tikceto:20c92a7
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         ports:
         - containerPort: 8080
         envFrom:
@@ -53,9 +76,12 @@ kind: Service
 metadata:
   name: ticketo-api
   namespace: tikceto
+  labels:          
+    app: ticketo-api
 spec:
   selector:
     app: ticketo-api
   ports:
-  - port: 8080
+  - name: http
+    port: 8080
     targetPort: 8080

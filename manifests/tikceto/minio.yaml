@@ -3,6 +3,8 @@ kind: StatefulSet
 metadata:
   name: minio
   namespace: tikceto
+  labels:
+    app: minio
 spec:
   serviceName: "minio"
   replicas: 1
@@ -14,6 +16,11 @@ spec:
       labels:
         app: minio
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
       containers:
       - name: minio
         image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
@@ -22,6 +29,16 @@ spec:
         - /data
         - --console-address
         - ":9001"
+        
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+
         ports:
         - containerPort: 9000
           name: api
@@ -36,9 +53,21 @@ spec:
           value: "http://minio:9000"
         - name: MINIO_DEFAULT_BUCKETS
           valueFrom: { secretKeyRef: { name: ticketo-secrets, key: S3_BUCKET_NAME } }
+        
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
         volumeMounts:
         - name: minio-storage
           mountPath: /data
+        - name: tmp
+          mountPath: /tmp
+          
         livenessProbe:
           httpGet:
             path: /minio/health/live
@@ -51,6 +80,11 @@ spec:
             port: 9000
           initialDelaySeconds: 30
           periodSeconds: 30
+      
+      volumes:
+      - name: tmp
+        emptyDir: {}
+
   volumeClaimTemplates:
   - metadata:
       name: minio-storage
@@ -66,6 +100,8 @@ kind: Service
 metadata:
   name: minio
   namespace: tikceto
+  labels:
+    app: minio
 spec:
   selector:
     app: minio
