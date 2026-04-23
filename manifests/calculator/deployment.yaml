@@ -39,11 +39,6 @@ spec:
               - ALL
         ports:
         - containerPort: 8080
-        volumeMounts:
-        - name: tmp-storage
-          mountPath: /tmp
-        - name: nginx-cache
-          mountPath: /var/cache/nginx
         readinessProbe:
           httpGet:
             path: /healthz
@@ -65,3 +60,13 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "500m"
+        volumeMounts:
+        - name: tmp-storage
+          mountPath: /tmp
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: var-cache
+        emptyDir: {}

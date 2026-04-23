@@ -31,14 +31,14 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       securityContext:
         runAsNonRoot: true
-        runAsUser: 101 
-        fsGroup: 101
+        runAsUser: 1001 
+        fsGroup: 1001
       containers:
       - name: frontend
         image: ghcr.io/k5sha/tikcetoweb:8b7d1d4
         securityContext:
           runAsNonRoot: true
-          runAsUser: 101
+          runAsUser: 1001
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities:
@@ -48,13 +48,13 @@ spec:
         - containerPort: 8080 
         readinessProbe:
           httpGet:
-            path: /
+            path: /healthz
             port: 8080
           initialDelaySeconds: 15  
           periodSeconds: 5        
         livenessProbe:
           httpGet:
-            path: /
+            path: /healthz
             port: 8080
           initialDelaySeconds: 15 
           periodSeconds: 20
