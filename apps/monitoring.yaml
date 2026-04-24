@@ -17,6 +17,12 @@ spec:
           enabled: true
           admissionWebhooks:
             enabled: false
+            patch:
+              enabled: false
+          tls:
+            enabled: false
+          webhook:
+            enabled: false
 
         prometheus:
           enabled: true
