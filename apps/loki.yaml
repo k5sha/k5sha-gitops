@@ -14,22 +14,17 @@ spec:
     helm:
       values: |
         deploymentMode: SingleBinary
-
         loki:
           auth_enabled: false
-          
           commonConfig:
             replication_factor: 1
             path_prefix: /var/loki
-
           storage:
             type: 'filesystem'
-          
           storage_config:
             filesystem:
               chunks_directory: /var/loki/chunks
               rules_directory: /var/loki/rules
-
           schemaConfig:
             configs:
               - from: "2024-01-01"
@@ -39,21 +34,17 @@ spec:
                 index:
                   prefix: index_
                   period: 24h
-
         singleBinary:
           persistence:
             enabled: true
             size: 5Gi
-
         gateway:
           enabled: true
-
         promtail:
           enabled: true
           config:
             clients:
               - url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
-
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

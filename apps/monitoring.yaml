@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring
+  name: kube-prometheus-stack
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,53 +10,36 @@ spec:
   source:
     repoURL: https://prometheus-community.github.io/helm-charts
     chart: kube-prometheus-stack
-    targetRevision: 69.3.0
+    targetRevision: 58.2.2
     helm:
       values: |
-        prometheusOperator:
-          enabled: true
-          admissionWebhooks:
-            enabled: false
-            patch:
-              enabled: false
-          tls:
-            enabled: false
-          webhook:
-            enabled: false
-        
-        prometheus:
-          enabled: true
-          prometheusSpec:
-            retention: 5d
-            retentionSize: "4GB"
-            storageSpec:
-              volumeClaimTemplate:
-                spec:
-                  storageClassName: local-path
-                  accessModes: ["ReadWriteOnce"]
-                  resources:
-                    requests:
-                      storage: 8Gi
-            resources:
-              requests:
-                memory: "400Mi"
-              limits:
-                memory: "800Mi"
-
         grafana:
           enabled: true
+          persistence:
+            enabled: true
+            size: 5Gi
           additionalDataSources:
             - name: Loki
               type: loki
               url: http://loki-gateway.monitoring.svc.cluster.local
               access: proxy
-
-        kube-state-metrics:
+        prometheus:
           enabled: true
-        
+          prometheusSpec:
+            retention: 3d
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 5Gi
         alertmanager:
           enabled: false
-
+        nodeExporter:
+          enabled: true
+        kubeStateMetrics:
+          enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
