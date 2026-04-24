@@ -50,7 +50,7 @@ spec:
             - name: VictoriaLogs
               type: victoriametrics-logs-datasource
               access: proxy
-              url: http://victoria-logs-single-server.monitoring.svc.cluster.local:9428
+              url: http://victoria-logs-victoria-logs-single-server.monitoring.svc.cluster.local:9428
               editable: true
 
         kube-state-metrics:
