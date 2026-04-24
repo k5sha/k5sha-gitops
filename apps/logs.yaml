@@ -46,6 +46,11 @@ spec:
     helm:
       values: |
         config:
+          filters: |
+              [FILTER]
+                  Name          modify
+                  Match         *
+                  Rename        log _msg
           outputs: |
             [OUTPUT]
                 Name http
