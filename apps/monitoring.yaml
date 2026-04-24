@@ -45,6 +45,13 @@ spec:
 
         grafana:
           enabled: true
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              access: proxy
+              url: http://loki-stack.monitoring.svc.cluster.local:3100
+              version: 1
+              editable: false
 
         kube-state-metrics:
           enabled: true
