@@ -27,6 +27,8 @@ spec:
         prometheus:
           enabled: true
           prometheusSpec:
+            retention: 5d
+            retentionSize: "4GB"
             storageSpec:
               volumeClaimTemplate:
                 spec:
@@ -34,12 +36,12 @@ spec:
                   accessModes: ["ReadWriteOnce"]
                   resources:
                     requests:
-                      storage: 10Gi
+                      storage: 8Gi
             resources:
               requests:
-                memory: "512Mi"
+                memory: "400Mi"
               limits:
-                memory: "2Gi"
+                memory: "800Mi"
 
         grafana:
           enabled: true
@@ -48,7 +50,7 @@ spec:
           enabled: true
         
         alertmanager:
-          enabled: true
+          enabled: false
 
   destination:
     server: https://kubernetes.default.svc
