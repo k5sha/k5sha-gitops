@@ -1,0 +1,61 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: victoria-logs
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://victoriametrics.github.io/helm-charts/
+    chart: victoria-logs-single
+    targetRevision: 0.12.2 
+    helm:
+      values: |
+        server:
+          retentionPeriod: 7d
+          resources:
+            requests:
+              memory: "400Mi"
+            limits:
+              memory: "800Mi"
+          persistentVolume:
+            enabled: true
+            storageClass: "local-path"
+            size: 20Gi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fluent-bit
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://fluent.github.io/helm-charts
+    chart: fluent-bit
+    targetRevision: 0.47.0
+    helm:
+      values: |
+        config:
+          outputs: |
+            [OUTPUT]
+                Name http
+                Match *
+                Host victoria-logs-single-server.monitoring.svc.cluster.local
+                Port 9428
+                URI /insert/jsonline?_stream_fields=kubernetes.pod_name,kubernetes.container_name,kubernetes.namespace_name
+                Format json_lines
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
