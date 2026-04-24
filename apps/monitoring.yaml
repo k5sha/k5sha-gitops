@@ -1,54 +1,69 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring-stack
+  name: monitoring
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://grafana.github.io/helm-charts
-    chart: loki-stack
-    targetRevision: 2.10.2
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 69.3.0
     helm:
       values: |
-        loki:
+        prometheusOperator:
           enabled: true
-          persistence:
-            enabled: true
-            size: 5Gi
-
-        promtail:
+          admissionWebhooks:
+            enabled: false
+            patch:
+              enabled: false
+          tls:
+            enabled: false
+          webhook:
+            enabled: false
+        
+        prometheus:
           enabled: true
+          prometheusSpec:
+            retention: 5d
+            retentionSize: "4GB"
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: local-path
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 8Gi
+            resources:
+              requests:
+                memory: "400Mi"
+              limits:
+                memory: "800Mi"
 
         grafana:
           enabled: true
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              url: http://loki-gateway.monitoring.svc.cluster.local
+              access: proxy
 
-
-        prometheus:
+        kube-state-metrics:
           enabled: true
-          server:
-            retention: 3d
-            persistentVolume:
-              size: 5Gi
-          alertmanager:
-            enabled: false
-          nodeExporter:
-            enabled: true
-          kubeStateMetrics:
-            enabled: true
+        
+        alertmanager:
+          enabled: false
 
-        fluent-bit:
-          enabled: false
-        filebeat:
-          enabled: false
-        logstash:
-          enabled: false
   destination:
-    name     : in-cluster
-    namespace: monitoring 
+    server: https://kubernetes.default.svc
+    namespace: monitoring
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
