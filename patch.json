@@ -1,0 +1,11 @@
+﻿{
+  "metadata": {
+    "annotations": {
+      "tailscale.com/hostname": "argocd-web"
+    }
+  },
+  "spec": {
+    "type": "LoadBalancer",
+    "loadBalancerClass": "tailscale"
+  }
+}
