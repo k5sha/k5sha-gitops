@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: monitoring
   namespace: argocd
+  annotations:
+    tailscale.com/managed-by: "argocd"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -44,6 +46,10 @@ spec:
 
         grafana:
           enabled: true
+          service:
+            annotations:
+              tailscale.com/expose: "true"
+              tailscale.com/hostname: "grafana-monitoring"
           plugins:
             - victoriametrics-logs-datasource
           additionalDataSources:
