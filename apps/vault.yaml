@@ -32,11 +32,14 @@ spec:
               }
         ui:
           enabled: true
+          serviceType: ClusterIP
           ingress:
             enabled: true
             ingressClassName: tailscale
             annotations:
               tailscale.com/hostname: "k8s-vault"
+            hosts:
+              - host: k8s-vault
             tls:
               - hosts:
                   - k8s-vault
