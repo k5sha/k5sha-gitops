@@ -5,7 +5,9 @@
 ![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)
 ![ArgoCD](https://img.shields.io/badge/ArgoCD-ef7b4d?style=for-the-badge&logo=argo&logoColor=white)
 ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=Prometheus&logoColor=white)
+![Tailscale](https://img.shields.io/badge/tailscale-533591?style=for-the-badge&logo=tailscale&logoColor=white)
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![HashiCorp Vault](https://img.shields.io/badge/vault-533591?style=for-the-badge&logo=vault&logoColor=white)
 </div>
 
 <div align="center">
@@ -56,6 +58,25 @@ kubectl apply -f bootstrap/root.yaml
 
 ArgoCD will detect the root application, which will subsequently deploy monitoring, portfolio, and tikceto. All dependencies, persistent volume claims, and ingresses will be provisioned automatically based on the sync policies.
 
+## 🔐 Security & Connectivity
+
+To ensure the cluster remains isolated from the public internet while remaining accessible for management, the following components are integrated into the GitOps workflow:
+
+### 🌐 Tailscale: Zero Trust Networking
+
+Instead of exposing the Kubernetes API (`6443`) or internal services to the world, the cluster utilizes **Tailscale** for secure, encrypted connectivity.
+
+* **Tailscale Kubernetes Operator**: Managed via ArgoCD, the operator allows exposing internal services directly to the private **Tailnet**.
+* **Subnet Routing**: A dedicated pod acts as a **Subnet Router**, announcing internal service and pod CIDRs (`10.43.0.0/16`, `10.42.0.0/16`) to authorized devices, such as my **macOS** management environment.
+* **Management Isolation**: This dual-layer approach provides a "Management Plane" for SSH and host-level recovery, while the "Control Plane" remains accessible only via private cluster routes.
+
+### 🗝️ HashiCorp Vault: Secrets Management
+
+Following GitOps best practices, no sensitive data is stored in plain text within this repository.
+
+* **Centralized Secrets**: **HashiCorp Vault** serves as the primary secrets engine, providing a secure, centralized location for database credentials, API keys, and certificates.
+* **External Secrets Operator (ESO)**: The cluster utilizes ESO to synchronize secrets from Vault into native Kubernetes `Secret` resources, ensuring a seamless and secure developer experience.
+* **Dynamic Injection**: Future iterations aim to implement direct sidecar injection for applications, further reducing the attack surface by avoiding persistent secret storage in the cluster etcd.
 
 ## 🚀 CI/CD & Security Pipelines
 
@@ -81,7 +102,9 @@ A robust "Gatekeeper" pipeline that triggers on every Pull Request to the `main`
 ### 📅 Backlog
 - [ ] Add external secret manager
 - [ ] Add the ELK Stack
-
+- [x] Integrate **HashiCorp Vault** for centralized secret management.
+- [x] Configure **Tailscale Subnet Router** for secure `k9s` access.
+- [ ] Add the ELK Stack for advanced log analysis.
 ---
 <div align="center">
 
