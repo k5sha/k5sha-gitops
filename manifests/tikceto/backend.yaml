@@ -48,7 +48,7 @@ spec:
         - containerPort: 8080
         envFrom:
         - secretRef:
-            name: ticketo-secrets
+            name: tikceto-secrets
         readinessProbe:
           httpGet:
             path: /v1/health
