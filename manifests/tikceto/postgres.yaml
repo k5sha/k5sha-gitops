@@ -36,7 +36,7 @@ spec:
         - containerPort: 5432
         envFrom:
         - secretRef:
-            name: ticketo-secrets
+            name: tikceto-secrets
         resources:
           requests:
             memory: "256Mi"
