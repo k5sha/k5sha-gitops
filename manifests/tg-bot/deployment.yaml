@@ -23,7 +23,7 @@ spec:
         fsGroup: 1001
       containers:
       - name: bot
-        image: ghcr.io/k5sha/tg-downloader-bot:placeholder
+        image: ghcr.io/k5sha/tg-downloader-bot:c384ad6
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
