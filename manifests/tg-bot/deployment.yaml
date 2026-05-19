@@ -35,7 +35,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: tg-bot-secrets
-              key: bot-token
+              key: bot_token
         resources:
           requests:
             memory: "128Mi" 
