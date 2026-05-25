@@ -10,9 +10,9 @@ spec:
   ingressClassName: traefik 
   tls:
   - hosts:
-    - calculator.k5sha.xyz
+    - calculator.k5sha.com
   rules:
-  - host: calculator.k5sha.xyz
+  - host: calculator.k5sha.com
     http:
       paths:
       - path: /
