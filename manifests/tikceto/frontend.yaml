@@ -35,7 +35,7 @@ spec:
         fsGroup: 1001
       containers:
       - name: frontend
-        image: ghcr.io/k5sha/tikcetoweb:4feec26
+        image: ghcr.io/k5sha/tikcetoweb:a4fdc4e
         securityContext:
           runAsNonRoot: true
           runAsUser: 1001
