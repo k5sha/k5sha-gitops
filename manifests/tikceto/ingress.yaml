@@ -10,30 +10,19 @@ spec:
   ingressClassName: traefik 
   tls:
   - hosts:
-    - api.tikceto.k5sha.com
-    - s3.tikceto.k5sha.com
+    - api.k5sha.com
     - tikceto.k5sha.com
   rules:
-  - host: api.tikceto.k5sha.com
+  - host: api.k5sha.com
     http:
       paths:
-      - path: /
+      - path: /tikceto
         pathType: Prefix
         backend:
           service:
             name: ticketo-api
             port:
               number: 8080
-  - host: s3.tikceto.k5sha.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: seaweedfs-s3
-            port:
-              number: 8333
   - host: tikceto.k5sha.com
     http:
       paths:
