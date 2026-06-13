@@ -1,3 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticketo-api
+  namespace: tikceto
+  labels:          
+    app: ticketo-api
+spec:
+  selector:
+    app: ticketo-api
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -91,18 +106,3 @@ spec:
         target:
           type: Utilization
           averageUtilization: 50
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ticketo-api
-  namespace: tikceto
-  labels:          
-    app: ticketo-api
-spec:
-  selector:
-    app: ticketo-api
-  ports:
-  - name: http
-    port: 8080
-    targetPort: 8080
