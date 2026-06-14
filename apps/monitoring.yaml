@@ -45,17 +45,17 @@ spec:
         grafana:
           enabled: true
           service:
-              type: LoadBalancer
-              loadBalancerClass: tailscale
-              annotations:
-                tailscale.com/hostname: "monitoring-grafana"
-          plugins:
-            - victoriametrics-logs-datasource
+            type: LoadBalancer
+            loadBalancerClass: tailscale
+            annotations:
+              tailscale.com/hostname: "monitoring-grafana"
           additionalDataSources:
-            - name: VictoriaLogs
-              type: victoriametrics-logs-datasource
+            - name: Loki
+              type: loki
               access: proxy
-              url: http://victoria-logs-victoria-logs-single-server.monitoring.svc.cluster.local:9428
+              url: http://grafana-loki-single-binary.monitoring.svc.cluster.local:3100
+              jsonData:
+                maxLines: 1000
               editable: true
 
         kube-state-metrics:
