@@ -8,12 +8,12 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://grafana.github.io/helm-charts
+    repoURL: https://grafana-community.github.io/helm-charts
     chart: loki
-    targetRevision: 6.30.1
+    targetRevision: 17.4.0
     helm:
       values: |
-        deploymentMode: SingleBinary
+        deploymentMode: Monolithic
 
         loki:
           auth_enabled: false
@@ -37,11 +37,12 @@ spec:
           limits_config:
             allow_structured_metadata: true
 
-        singleBinary:
+        monolithic:
           replicas: 1
 
           persistence:
             enabled: true
+            type: pvc
             storageClass: local-path
             size: 20Gi
 
@@ -62,15 +63,6 @@ spec:
         test:
           enabled: false
 
-        backend:
-          replicas: 0
-
-        read:
-          replicas: 0
-
-        write:
-          replicas: 0
-
         chunksCache:
           enabled: false
 
@@ -79,7 +71,6 @@ spec:
 
         minio:
           enabled: false
-
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
@@ -99,17 +90,15 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-
   source:
     repoURL: https://grafana.github.io/helm-charts
     chart: promtail
     targetRevision: 6.17.0
-
     helm:
       values: |
         config:
           clients:
-            - url: http://grafana-loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+            - url: http://loki-monolithic.monitoring.svc.cluster.local:3100/loki/api/v1/push
 
         resources:
           requests:
@@ -118,7 +107,6 @@ spec:
           limits:
             cpu: 100m
             memory: 100Mi
-
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

@@ -49,14 +49,13 @@ spec:
             loadBalancerClass: tailscale
             annotations:
               tailscale.com/hostname: "monitoring-grafana"
-          additionalDataSources:
-            - name: Loki
-              type: loki
-              access: proxy
-              url: http://grafana-loki.monitoring.svc.cluster.local:3100
-              jsonData:
-                maxLines: 1000
-              editable: true
+        additionalDataSources:
+          - name: Loki
+            type: loki
+            access: proxy
+            url: http://loki-monolithic.monitoring.svc.cluster.local:3100
+            jsonData:
+              maximumAlerts: 11
 
         kube-state-metrics:
           enabled: true
