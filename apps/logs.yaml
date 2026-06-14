@@ -1,26 +1,36 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: victoria-logs
+  name: grafana-loki
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://victoriametrics.github.io/helm-charts/
-    chart: victoria-logs-single
-    targetRevision: 0.12.2 
+    repoURL: https://grafana.github.io/helm-charts
+    chart: loki
+    targetRevision: 6.6.0
     helm:
       values: |
-        server:
-          retentionPeriod: 7d
-          resources:
-            requests:
-              memory: "400Mi"
-            limits:
-              memory: "800Mi"
-          persistentVolume:
+        loki:
+          auth_enabled: false
+          commonConfig:
+            replication_factor: 1
+          storage:
+            type: filesystem
+          schemaConfig:
+            configs:
+              - from: "2024-01-01"
+                store: tsdb
+                object_store: filesystem
+                schema: v13
+                index:
+                  prefix: index_
+                  period: 24h
+        singleBinary:
+          replicas: 1
+          persistence:
             enabled: true
             storageClass: "local-path"
             size: 20Gi
@@ -35,32 +45,24 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: fluent-bit
+  name: promtail
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://fluent.github.io/helm-charts
-    chart: fluent-bit
-    targetRevision: 0.47.0
+    repoURL: https://grafana.github.io/helm-charts
+    chart: promtail
+    targetRevision: 6.16.6
     helm:
       values: |
         config:
-          filters: |
-              [FILTER]
-                  Name          modify
-                  Match         *
-                  Rename        log _msg
-          outputs: |
-            [OUTPUT]
-                Name http
-                Match *
-                Host victoria-logs-victoria-logs-single-server.monitoring.svc.cluster.local
-                Port 9428
-                URI /insert/jsonline?_stream_fields=kubernetes.pod_name,kubernetes.container_name,kubernetes.namespace_name
-                Format json_lines
+          clients:
+            - url: http://grafana-loki-single-binary.monitoring.svc.cluster.local:3100/loki/api/v1/push
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
   syncPolicy:
     automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]
