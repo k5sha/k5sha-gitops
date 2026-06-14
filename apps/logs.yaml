@@ -20,6 +20,10 @@ spec:
           replicas: 0
         write:
           replicas: 0
+        gateway:
+          enabled: false
+        lokiCanary:
+          enabled: false
         loki:
           auth_enabled: false
           commonConfig:
