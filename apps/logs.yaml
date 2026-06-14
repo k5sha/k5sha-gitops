@@ -13,6 +13,7 @@ spec:
     targetRevision: 6.6.0
     helm:
       values: |
+        deploymentMode: singleBinary
         loki:
           auth_enabled: false
           commonConfig:
