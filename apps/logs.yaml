@@ -1,82 +1,38 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: grafana-loki
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: https://grafana.github.io/helm-charts
-    chart: loki
-    targetRevision: 6.6.0
-    helm:
-      values: |
-          deploymentMode: SingleBinary
+source:
+  repoURL: https://grafana.github.io/helm-charts
+  chart: loki-stack
+  targetRevision: 2.10.2
+  helm:
+    values: |
+      promtail:
+        enabled: true
 
-          test:
-            enabled: false
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 50m
+          limits:
+            memory: 150Mi
+            cpu: 200m
 
-          lokiCanary:
-            enabled: false
+      grafana:
+        enabled: false
 
-          gateway:
-            enabled: false
+      loki:
+        enabled: true
 
-          minio:
-            enabled: false
+        persistence:
+          enabled: true
+          storageClassName: local-path
+          size: 20Gi
 
-          chunksCache:
-            enabled: false
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 100m
+          limits:
+            memory: 400Mi
+            cpu: 500m
 
-          resultsCache:
-            enabled: false
-
-          singleBinary:
-            replicas: 1
-            persistence:
-              enabled: true
-              storageClass: local-path
-              size: 20Gi
-
-          backend:
-            replicas: 0
-          read:
-            replicas: 0
-          write:
-            replicas: 0
-        
-
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: monitoring
-  syncPolicy:
-    automated: { prune: true, selfHeal: true }
-    syncOptions: [CreateNamespace=true]
-
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: promtail
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: https://grafana.github.io/helm-charts
-    chart: promtail
-    targetRevision: 6.16.6
-    helm:
-      values: |
         config:
-          clients:
-            - url: http://grafana-loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: monitoring
-  syncPolicy:
-    automated: { prune: true, selfHeal: true }
-    syncOptions: [CreateNamespace=true]
+          auth_enabled: false
