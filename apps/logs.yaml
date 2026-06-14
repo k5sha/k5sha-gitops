@@ -28,18 +28,17 @@ spec:
 
         loki:
           enabled: true
-          loki:
-            persistence:
-              enabled: true
-              storageClassName: "local-path"
-              size: 20Gi
-            resources:
-              requests:
-                memory: 200Mi
-                cpu: 100m
-              limits:
-                memory: 400Mi
-                cpu: 500m
+          persistence:
+            enabled: true
+            storageClassName: "local-path"
+            size: 20Gi
+          resources:
+            requests:
+              memory: 200Mi
+              cpu: 100m
+            limits:
+              memory: 400Mi
+              cpu: 500m
           config:
             auth_enabled: false
 
