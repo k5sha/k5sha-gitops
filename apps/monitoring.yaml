@@ -53,7 +53,7 @@ spec:
           - name: Loki
             type: loki
             access: proxy
-            url: http://loki-monolithic.monitoring.svc.cluster.local:3100
+            url: http://grafana-loki.monitoring.svc.cluster.local:3100
             jsonData:
               maximumAlerts: 11
 
