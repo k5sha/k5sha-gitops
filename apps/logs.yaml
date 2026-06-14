@@ -20,6 +20,7 @@ spec:
 
           commonConfig:
             replication_factor: 1
+            path_prefix: /var/loki
 
           schemaConfig:
             configs:
