@@ -44,18 +44,22 @@ spec:
 
         grafana:
           enabled: true
+          persistence:
+            enabled: true
+            storageClassName: local-path
+            size: 2Gi
           service:
             type: LoadBalancer
             loadBalancerClass: tailscale
             annotations:
               tailscale.com/hostname: "monitoring-grafana"
-        additionalDataSources:
-          - name: Loki
-            type: loki
-            access: proxy
-            url: http://grafana-loki.monitoring.svc.cluster.local:3100
-            jsonData:
-              maximumAlerts: 11
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              access: proxy
+              url: http://grafana-loki.monitoring.svc.cluster.local:3100
+              jsonData:
+                maximumAlerts: 11
 
         kube-state-metrics:
           enabled: true
