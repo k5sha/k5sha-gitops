@@ -35,7 +35,7 @@ spec:
         fsGroup: 1001
       containers:
       - name: calculator
-        image: ghcr.io/k5sha/calculator:d82581e
+        image: ghcr.io/k5sha/calculator:d1b2075
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
