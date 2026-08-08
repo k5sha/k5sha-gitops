@@ -33,6 +33,7 @@ spec:
                 tls_disable = 1
                 address = "[::]:8200"
                 cluster_address = "[::]:8201"
+                unauthenticated_metrics_access = true
                 telemetry {
                   unauthenticated_metrics_access = true
                 }
