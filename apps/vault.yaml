@@ -32,7 +32,9 @@ spec:
                 tls_disable = 1
                 address = "[::]:8200"
                 cluster_address = "[::]:8201"
-                unauthenticated_metrics_access 
+                telemetry {
+                  unauthenticated_metrics_access = "true"
+                }
               }
 
               storage "file" {
