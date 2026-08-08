@@ -26,6 +26,7 @@ spec:
               telemetry {
                 prometheus_retention_time = "24h"
                 disable_hostname = true
+                unauthenticated_metrics_access = true
               }
 
               listener "tcp" {
@@ -33,7 +34,7 @@ spec:
                 address = "[::]:8200"
                 cluster_address = "[::]:8201"
                 telemetry {
-                  unauthenticated_metrics_access = "true"
+                  unauthenticated_metrics_access = true
                 }
               }
 
