@@ -22,11 +22,18 @@ spec:
             enabled: true
             config: |
               ui = true
+
+              telemetry {
+                prometheus_retention_time = "24h"
+                disable_hostname = true
+              }
+
               listener "tcp" {
                 tls_disable = 1
                 address = "[::]:8200"
                 cluster_address = "[::]:8201"
               }
+              
               storage "file" {
                 path = "/vault/data"
               }
