@@ -28,6 +28,9 @@ spec:
           enabled: true
           prometheusSpec:
             retention: 5d
+            serviceMonitorSelectorNilUsesHelmValues: false
+            serviceMonitorSelector: {}
+            serviceMonitorNamespaceSelector: {}
             storageSpec:
               volumeClaimTemplate:
                 spec:
