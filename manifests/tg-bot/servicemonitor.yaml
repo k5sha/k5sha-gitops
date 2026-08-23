@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tg-downloader-bot
+  namespace: tg-bot
+  labels:
+    app: tg-bot
+spec:
+  selector:
+    matchLabels:
+      app: tg-bot
+  endpoints:
+  - port: http        
+    path: /metrics    
+    interval: 15s
