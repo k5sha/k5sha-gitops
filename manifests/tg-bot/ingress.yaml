@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tg-bot-ingress
+  namespace: tg-bot
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: default
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - api.k5sha.com
+  rules:
+  - host: api.k5sha.com
+    http:
+      paths:
+      - path: /tg-bot
+        pathType: Prefix
+        backend:
+          service:
+            name: tg-bot
+            port:
+              number: 80
