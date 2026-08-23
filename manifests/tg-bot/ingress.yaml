@@ -5,7 +5,6 @@ metadata:
   namespace: tg-bot
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.middlewares: tg-bot-telegram-ip-whitelist@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
