@@ -1,0 +1,10 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: telegram-ip-whitelist
+  namespace: tg-bot
+spec:
+  ipWhiteList:
+    sourceRange:
+      - 149.154.160.0/20
+      - 91.108.4.0/22
