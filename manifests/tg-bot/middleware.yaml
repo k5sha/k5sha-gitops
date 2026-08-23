@@ -9,4 +9,4 @@ spec:
       - 149.154.160.0/20
       - 91.108.4.0/22
     ipStrategy:
-      depth: 1
+      depth: 2
