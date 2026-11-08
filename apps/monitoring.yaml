@@ -27,7 +27,9 @@ spec:
         prometheus:
           enabled: true
           prometheusSpec:
-            retention: 5d
+            retention: 3d
+            scrapeInterval: 60s
+            evaluationInterval: 60s
             serviceMonitorSelectorNilUsesHelmValues: false
             serviceMonitorSelector: {}
             serviceMonitorNamespaceSelector: {}
@@ -44,6 +46,9 @@ spec:
                 memory: "400Mi"
               limits:
                 memory: "800Mi"
+            env:
+              - name: GOMEMLIMIT
+                value: 700MiB
 
         grafana:
           enabled: true
